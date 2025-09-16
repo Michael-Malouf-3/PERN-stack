@@ -1,0 +1,44 @@
+# Node dependencies
+node_modules/
+
+# Environment variables (DB credentials, API keys, etc.)
+.env
+.env.*      # if you use multiple env files (e.g. .env.local, .env.production)
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs
+*.log
+*.tmp
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Build / Coverage
+dist/
+build/
+coverage/
+
+# TypeScript (if used)
+*.tsbuildinfo
+
+# Editor settings (optional — if you use local overrides)
+.vscode/
+.idea/
+*.swp
+
+# Docker (if you use Postgres or app in containers)
+docker-compose.override.yml
+*.pid
+
+# PostgreSQL (if you accidentally initialize DB files in your project folder)
+pgdata/
+*.sql
+
+# Misc
+.env.test
+.cache/
