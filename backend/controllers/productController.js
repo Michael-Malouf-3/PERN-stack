@@ -2,7 +2,7 @@ import db from "../config/db.js";
 
 export const getProducts = async (req, res) => {
     try {
-        const products = await db.query(`SELECT * FROM products ORDER BY created_at DESC`);
+        const products = await db.queryMany(`SELECT * FROM products ORDER BY created_at DESC`);
         console.log(`fetched products: ${products}`);
         res.status(200).json({success: true, data: products});
     } catch (error) {
@@ -47,18 +47,20 @@ export const updateProduct = async (req, res) => {
     const { id } = req.params;
     const { name, price, image } = req.body;
     try {
+        let updatedProduct;
         await db.transaction(async (client) => {
             // 1. Check if product exists
-            const existingProduct = await client.queryOne(`SELECT * FROM products WHERE id = $1`, [id]);
+            const existingProduct = await client.query(`SELECT * FROM products WHERE id = $1`, [id]);
             if (!existingProduct) {
                 return res.status(404).json({success: false, error: "Product not found"});
             }
             
             // 2. Update the product
-            const updatedProduct = await client.query(
-                `UPDATE products SET name = $1, price = $2, image = $3, updated_at = NOW() WHERE id = $4 RETURNING *`,
+            const result = await client.query(
+                `UPDATE products SET name = $1, price = $2, image = $3 WHERE id = $4 RETURNING *`,
                 [name || existingProduct.name, price || existingProduct.price, image || existingProduct.image, id]
             );
+            updatedProduct = result.rows[0];
         });
         res.status(200).json({success: true, data: updatedProduct});
     } catch (error) {
@@ -71,7 +73,7 @@ export const updateProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
     const { id } = req.params;
     try {
-        const deletedProduct = await db.query(`DELETE FROM products WHERE id = $1 RETURNING *`, [id]);
+        const deletedProduct = await db.queryOne(`DELETE FROM products WHERE id = $1 RETURNING *`, [id]);
         if (!deletedProduct) {
             return res.status(404).json({success: false, error: "Product not found"});
         }
