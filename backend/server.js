@@ -53,12 +53,54 @@ app.use(morgan("dev"));
 // WHAT IT DOES: Logs every request to the console
 // OUTPUT: "GET /api/products 200 45ms - 1.2kb"
 
+
+// ============================================
+// 5. Apply arject rate limiting middleware to all routes
+// ============================================
+
+app.use(async (req, res, next) => {
+    try {
+        const decision = await aj.protect(req, {
+            requested: 1 // each request takes 1 token
+        });
+
+        if (decision.isDenied()){
+            if (decision.reason.isRateLimit()){
+                res.status(429).json({error: "Too many requests, please try later"});
+            } else if (decision.reason.isBot()){
+                res.status(403).json({error:"Bot access denied"});
+            } else{
+                res.status(403).json({error:"Access denied"});
+            }
+            return;
+        }
+        //check for spoofed bots
+        if (decision.result.some((result) => result.reason.isBot() && result.reason.isSpoofed())){
+            res.status(403).json({error:"Spoofed bot detected, access denied"});
+            return;
+        }
+        next();
+    }
+    catch (error){
+        console.log("Arcjet error:", error);
+        next(error);
+    }
+})
+
+
+
+// ============================================
+// 6. ROUTES - Defining API Endpoints
+// ============================================
+
 app.use("/api/products", productRoutes);
 // WHAT IT DOES: Routes all /api/products/* requests to your productRoutes file
 // EXAMPLE: GET /api/products/123 → goes to productRoutes.js
 
+
+
 // ============================================
-// 4. HEALTH CHECK ROUTES - Testing Your Server
+// 7. HEALTH CHECK ROUTES - Testing Your Server
 // ============================================
 
 // Basic server health check
@@ -92,7 +134,7 @@ app.get("/health/db", async (req, res) => {
 
 
 // ============================================
-// 5. ERROR HANDLING - Catching Problems
+// 8. ERROR HANDLING - Catching Problems
 // ============================================
 
 // Global error handler - catches all unhandled errors
@@ -122,7 +164,7 @@ app.use((req, res) => {
 
 
 // ============================================
-// 6. GRACEFUL SHUTDOWN - Clean Exit
+// 9. GRACEFUL SHUTDOWN - Clean Exit
 // ============================================
 
 // Handle SIGTERM signal (deployment shutdown)
@@ -160,7 +202,7 @@ WHY THIS MATTERS:
 */
 
 // ============================================
-// 7. START THE SERVER - Begin Listening
+// 10. START THE SERVER - Begin Listening
 // ============================================
 
 app.listen(PORT, () => {
