@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useProductStore } from "../store/useProductStore";
 import { PlusCircleIcon, RefreshCwIcon } from "lucide-react";
+import ProductCard from "../components/ProductCard.jsx";
 
 function HomePage() {
     const { products, loading, error, fetchProducts } = useProductStore();

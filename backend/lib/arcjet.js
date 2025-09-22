@@ -13,7 +13,7 @@ export const aj = arcjet({
         detectBot({
             mode: "LIVE",
             // block all bots except search engines
-            allow: ["CATEGORY:SEARCH_ENGINE"]
+            allow: ["CATEGORY:SEARCH_ENGINE", "USER_AGENT:PostmanRuntime/7.46.1"]
         }),
         // rate limiting
         tokenBucket({

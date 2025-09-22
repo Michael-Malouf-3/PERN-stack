@@ -1,7 +1,16 @@
 
 function ProductCard() {
     return (
-        <div>ProductCard</div>
+        <div>
+            {/* Product Image */}
+            <div>
+                {/* Product Info */}
+                {/* Card Actions */}
+                <div>
+                    
+                </div>
+            </div>
+        </div>      
     )
 }
 

@@ -9,6 +9,7 @@ import cors from "cors";              // Cross-Origin Resource Sharing
 import dotenv from "dotenv";          // Loads environment variables from .env file
 import productRoutes from "./routes/productRoutes.js"; // Your custom routes
 import db from "./config/db.js";      // Your database connection class
+import { aj } from "./lib/arcjet.js"
 
 /*
 WHY THESE IMPORTS?
@@ -60,9 +61,12 @@ app.use(morgan("dev"));
 
 app.use(async (req, res, next) => {
     try {
-        const decision = await aj.protect(req, {
-            requested: 1 // each request takes 1 token
-        });
+
+        if (process.env.NODE_ENV !== "production" && req.get("user-agent")?.includes("PostmanRuntime")) {
+            return next();
+        }
+
+        const decision = await aj.protect(req, { requested: 1 /* each request takes 1 token */ });
 
         if (decision.isDenied()){
             if (decision.reason.isRateLimit()){
@@ -75,7 +79,7 @@ app.use(async (req, res, next) => {
             return;
         }
         //check for spoofed bots
-        if (decision.result.some((result) => result.reason.isBot() && result.reason.isSpoofed())){
+        if (decision.results.some((result) => result.reason.isBot() && result.reason.isSpoofed())){
             res.status(403).json({error:"Spoofed bot detected, access denied"});
             return;
         }
