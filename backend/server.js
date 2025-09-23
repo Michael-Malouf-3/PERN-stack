@@ -10,6 +10,7 @@ import dotenv from "dotenv";          // Loads environment variables from .env f
 import productRoutes from "./routes/productRoutes.js"; // Your custom routes
 import db from "./config/db.js";      // Your database connection class
 import { aj } from "./lib/arcjet.js"
+import path from "path";
 
 /*
 WHY THESE IMPORTS?
@@ -30,6 +31,7 @@ dotenv.config(); // Load environment variables from .env file
 
 const app = express(); // Create the Express application instance
 const PORT = process.env.PORT || 5000; // Use PORT from .env, or default to 5000
+const __dirname = path.resolve();
 
 
 // ============================================
@@ -44,9 +46,9 @@ app.use(express.json());
 
 app.use(cors()); 
 // WHAT IT DOES: Allows cross-origin requests
-// WHY: Your React frontend (localhost:3000) can call your API (localhost:3000)
+// WHY: Your React frontend (localhost:5173) can call your API (localhost:3000)
 
-app.use(helmet()); 
+app.use(helmet({contentSecurityPolicy:false})); 
 // WHAT IT DOES: Sets security HTTP headers
 // EXAMPLE: X-Content-Type-Options, X-Frame-Options, etc.
 
@@ -68,6 +70,7 @@ app.use(async (req, res, next) => {
 
         const decision = await aj.protect(req, { requested: 1 /* each request takes 1 token */ });
 
+        console.log(decision);
         if (decision.isDenied()){
             if (decision.reason.isRateLimit()){
                 res.status(429).json({error: "Too many requests, please try later"});
@@ -78,6 +81,7 @@ app.use(async (req, res, next) => {
             }
             return;
         }
+
         //check for spoofed bots
         if (decision.results.some((result) => result.reason.isBot() && result.reason.isSpoofed())){
             res.status(403).json({error:"Spoofed bot detected, access denied"});
@@ -101,7 +105,14 @@ app.use("/api/products", productRoutes);
 // WHAT IT DOES: Routes all /api/products/* requests to your productRoutes file
 // EXAMPLE: GET /api/products/123 → goes to productRoutes.js
 
+if(process.env.NODE_ENV === "production"){
+    // server our react app
+    app.use(express.static(path.join(__dirname, "/frontend/dist")))
 
+    app.get((req, res) => {
+        res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"))
+    })
+}
 
 // ============================================
 // 7. HEALTH CHECK ROUTES - Testing Your Server
